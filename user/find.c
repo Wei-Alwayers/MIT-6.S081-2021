@@ -31,7 +31,8 @@ find(char *path, char *target)
             p++;
             if(strcmp(p, target) == 0){
                 // find target file path
-                printf("%s\n", path);
+                write(1, path, strlen(path));
+                write(1, "\n", 1);
             }
             break;
         case T_DIR:
@@ -62,10 +63,11 @@ find(char *path, char *target)
     }
     close(fd);
 }
+
 int
 main(int argc, char *argv[]){
     if(argc < 3){
-        fprintf(2, "Usage: find <path-name> <file-name>");
+        fprintf(2, "Usage: find <path-name> <file-name>\n");
         exit(0);
     }
     find(argv[1], argv[2]);
