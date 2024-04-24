@@ -56,6 +56,20 @@ procinit(void)
   }
 }
 
+// get the number of process
+uint64
+num_proc(void)
+{
+    struct proc *p;
+    uint64 count = 0;
+    for(p = proc; p < &proc[NPROC]; p++) {
+        if(p->state != UNUSED) {
+            count++;
+        }
+    }
+    return count;
+}
+
 // Must be called with interrupts disabled,
 // to prevent race with process being moved
 // to a different CPU.
