@@ -81,8 +81,35 @@ int
 sys_pgaccess(void)
 {
   // lab pgtbl: your code here.
+  uint64 start_addr;
+  int num;
+  uint64 buf;
+  if(argaddr(0, &start_addr) < 0)
+      return -1;
+  if(argint(1, &num) < 0)
+      return -1;
+  if(argaddr(2, &buf) < 0)
+      return -1;
+  if(num > 64){
+      panic("Too many pages!\n");
+  }
+  uint64 bitmap = 0;
+  vmprint(myproc()->pagetable, 1);
+  for(int i = 0; i < num; i++){
+      uint64 addr = start_addr + PGSIZE * i;
+      pte_t *pte;
+      pte = walk(myproc()->pagetable, addr, 1);
+      if(*pte & PTE_A){
+          // set position i of buf as 1
+          bitmap |= (uint64)1 << i;
+          *pte &= (uint64)~PTE_A;
+      }
+  }
+  if(copyout(myproc()->pagetable, buf, (char *)&bitmap, sizeof(bitmap)) < 0)
+      return -1;
   return 0;
 }
+
 #endif
 
 uint64
