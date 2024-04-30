@@ -1,0 +1,49 @@
+Q1:
+Which registers contain arguments to functions?
+For example, which register holds 13 in main's call to printf?
+A1:
+In RISC-V calling convention, function arguments are typically passed in registers a0 to a7. Specifically:
+a0 contains the first argument.
+a1 contains the second argument.
+a2 contains the third argument.
+And so on...
+In the call printf("%d %d\n", f(8)+1, 13); within main:
+a0 will hold f(8) + 1.
+a1 will hold 13.
+
+Q2:
+Where is the call to function f in the assembly code for main?
+Where is the call to g? (Hint: the compiler may inline functions.)
+
+A2:
+The call to function f in main is located at the offset 0x24 (address 0x1c + 0x24 = 0x40).
+The call to function g within f is inlined.
+The computation f(8) + 1 is performed directly with the addiw instruction at offset 0x14 in main.
+
+Q3:
+At what address is the function printf located?
+
+A3:
+The address of the printf function is calculated using auipc and addi instructions:
+auipc a0, 0x0 sets a0 to the upper 20 bits of the PC (program counter).
+addi a0, a0, 1960 adds an offset to a0 to get the address of printf.
+
+Q4:
+What value is in the register ra just after the jalr to printf in main?
+Run the following code.
+
+unsigned int i = 0x00646c72;
+printf("H%x Wo%s", 57616, &i);
+
+What is the output? Here's an ASCII table that maps bytes to characters.
+The output depends on that fact that the RISC-V is little-endian.
+If the RISC-V were instead big-endian what would you set i to in order to yield the same output? Would you need to change 57616 to a different value?
+
+A4:
+
+
+Q5:
+In the following code, what is going to be printed after 'y='?
+(note: the answer is not a specific value.) Why does this happen?
+
+printf("x=%d y=%d", 3);
