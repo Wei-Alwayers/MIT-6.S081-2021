@@ -71,7 +71,7 @@ usertrap(void)
           if(!p->is_alarmed && p->alarm_ticks != 0){
               p->ticks++;
               if(p->ticks == p->alarm_ticks){
-//                  *p->alarm_trapframe = *p->trapframe;
+                  *(p->alarm_trapframe) = *(p->trapframe);
                   p->trapframe->epc = p->handler;
                   p->ticks = 0;
                   p->is_alarmed = 1;

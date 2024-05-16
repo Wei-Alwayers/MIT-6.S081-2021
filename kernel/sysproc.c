@@ -115,7 +115,7 @@ sys_sigalarm(void)
 uint64
 sys_sigreturn(void)
 {
-//    myproc()->trapframe = myproc()->alarm_trapframe;
+    *(myproc()->trapframe) = *(myproc()->alarm_trapframe);
     myproc()->is_alarmed = 0;
     return 0;
 }
