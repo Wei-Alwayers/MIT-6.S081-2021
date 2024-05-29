@@ -63,10 +63,34 @@ usertrap(void)
     // an interrupt will change sstatus &c registers,
     // so don't enable until done with those registers.
     intr_on();
-
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
+  } else if(r_scause() == 15){
+    // Page fault
+    uint64 fault_va = r_stval();
+    char* mem;
+    if((mem = kalloc()) == 0){
+      panic("NO More Memory!");
+    }
+    pte_t *pte = walk(p->pagetable, fault_va, 0);
+    if (pte == 0) {
+      exit(-1);
+    }
+    if(((*pte & PTE_V) == 0) || ((*pte & PTE_U) == 0)){
+      panic("pte permission err");
+    }
+    if((*pte & PTE_C) == 0){
+      p->killed = 1;
+      panic("illegal write page! not cow page");
+    }
+    // Copy the content from the old page to the new page
+    uint64 pa = PTE2PA(*pte);
+    memmove(mem, (char *)pa, PGSIZE);
+    kfree((void *)pa);
+    // Mark the new page as writable
+    uint flags = PTE_FLAGS(*pte);
+    *pte = PA2PTE(mem) | flags | PTE_W;
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());

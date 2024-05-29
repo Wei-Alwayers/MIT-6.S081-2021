@@ -303,22 +303,21 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   pte_t *pte;
   uint64 pa, i;
   uint flags;
-  char *mem;
 
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
       panic("uvmcopy: pte should exist");
     if((*pte & PTE_V) == 0)
       panic("uvmcopy: page not present");
+    // clear PTE_W
+    *pte &= ~PTE_W;
+    *pte |= PTE_C;
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto err;
-    memmove(mem, (char*)pa, PGSIZE);
-    if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
-      kfree(mem);
+    if(mappages(new, i, PGSIZE, pa, flags) != 0){
       goto err;
     }
+    cowalloc((void *)pa);
   }
   return 0;
 
@@ -350,6 +349,30 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);
+    pte_t *pte = walk(pagetable, va0, 0);
+    if (pte == 0) {
+      return -1;
+    }
+    if(((*pte & PTE_V) == 0) || ((*pte & PTE_U) == 0)){
+      panic("pte permission err");
+    }
+    pa0 = walkaddr(pagetable, va0);
+    if(pa0 == 0)
+      return -1;
+    if((*pte & PTE_C) != 0){
+      char* mem;
+      if((mem = kalloc()) == 0){
+        panic("NO More Memory!");
+      }
+      // Copy the content from the old page to the new page
+      memmove(mem, (char *)pa0, PGSIZE);
+      kfree((void *)pa0);
+      // Mark the new page as writable
+      uint flags = PTE_FLAGS(*pte);
+      *pte = PA2PTE(mem) | flags | PTE_W;
+      pa0 = (uint64)mem;
+    }
+
     pa0 = walkaddr(pagetable, va0);
     if(pa0 == 0)
       return -1;
